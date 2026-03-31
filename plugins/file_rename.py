@@ -174,28 +174,47 @@ async def add_metadata(input_path, output_path, user_id):
         'subtitle': await codeflixbots.get_subtitle(user_id)
     }
     
-    # To keep only Telugu audio and strip others, while mapping video and subtitles.
-    # -map 0:v (all video)
-    # -map 0:a:m:language:tel (only Telugu audio tracks)
-    # -map 0:a:m:language:te (only Telugu audio tracks)
-    # -map 0:s? (all subtitles if they exist)
-    cmd = [
-        ffmpeg,
-        '-i', input_path,
-        '-map', '0:v',
-        '-map', '0:a:m:language:tel?',
-        '-map', '0:a:m:language:te?',
-        '-map', '0:s?',
-        '-c', 'copy',
-        '-metadata', f'title={metadata["title"]}',
-        '-metadata', f'artist={metadata["artist"]}',
-        '-metadata', f'author={metadata["author"]}',
-        '-metadata:s:v', f'title={metadata["video_title"]}',
-        '-metadata:s:a', f'title={metadata["audio_title"]}',
-        '-metadata:s:s', f'title={metadata["subtitle"]}',
-        '-loglevel', 'error',
-        output_path
-    ]
+    is_telugu_only = await codeflixbots.get_telugu_only(user_id)
+
+    if is_telugu_only:
+        # To keep only Telugu audio and strip others, while mapping video and subtitles.
+        # -map 0:v (all video)
+        # -map 0:a:m:language:tel (only Telugu audio tracks)
+        # -map 0:a:m:language:te (only Telugu audio tracks)
+        # -map 0:s? (all subtitles if they exist)
+        cmd = [
+            ffmpeg,
+            '-i', input_path,
+            '-map', '0:v',
+            '-map', '0:a:m:language:tel?',
+            '-map', '0:a:m:language:te?',
+            '-map', '0:s?',
+            '-c', 'copy',
+            '-metadata', f'title={metadata["title"]}',
+            '-metadata', f'artist={metadata["artist"]}',
+            '-metadata', f'author={metadata["author"]}',
+            '-metadata:s:v', f'title={metadata["video_title"]}',
+            '-metadata:s:a', f'title={metadata["audio_title"]}',
+            '-metadata:s:s', f'title={metadata["subtitle"]}',
+            '-loglevel', 'error',
+            output_path
+        ]
+    else:
+        # Default behavior: copy everything
+        cmd = [
+            ffmpeg,
+            '-i', input_path,
+            '-map', '0',
+            '-c', 'copy',
+            '-metadata', f'title={metadata["title"]}',
+            '-metadata', f'artist={metadata["artist"]}',
+            '-metadata', f'author={metadata["author"]}',
+            '-metadata:s:v', f'title={metadata["video_title"]}',
+            '-metadata:s:a', f'title={metadata["audio_title"]}',
+            '-metadata:s:s', f'title={metadata["subtitle"]}',
+            '-loglevel', 'error',
+            output_path
+        ]
     
     process = await asyncio.create_subprocess_exec(
         *cmd,
@@ -237,7 +256,11 @@ async def process_queue(client, user_id):
 
             # Pop the first item
             current_task = user_queues[user_id].pop(0)
-            await execute_rename(client, current_task['message'])
+            try:
+                await execute_rename(client, current_task['message'])
+            except Exception as e:
+                logger.error(f"Error processing file in queue: {e}")
+                await current_task['message'].reply_text(f"Error processing this file: {e}")
 
 
 @Client.on_message(filters.private & (filters.document | filters.video | filters.audio))
@@ -325,9 +348,13 @@ async def execute_rename(client, message):
         for placeholder, value in replacements.items():
             format_template = format_template.replace(placeholder, value)
 
+        # Get and apply prefix and suffix
+        prefix = await codeflixbots.get_prefix(user_id)
+        suffix = await codeflixbots.get_suffix(user_id)
+
         # Prepare file paths
         ext = os.path.splitext(file_name)[1] or ('.mp4' if media_type == 'video' else '.mp3')
-        new_filename = f"{format_template}{ext}"
+        new_filename = f"{prefix}{format_template}{suffix}{ext}"
         download_path = f"downloads/{new_filename}"
         metadata_path = f"metadata/{new_filename}"
         

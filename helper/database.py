@@ -182,5 +182,47 @@ class Database:
     async def set_video(self, user_id, video):
         await self.col.update_one({'_id': int(user_id)}, {'$set': {'video': video}})
 
+    async def get_prefix(self, id):
+        try:
+            user = await self.col.find_one({"_id": int(id)})
+            return user.get("prefix", "[@CartoonandAnime1Telugu] ") if user else "[@CartoonandAnime1Telugu] "
+        except Exception as e:
+            logging.error(f"Error getting prefix for user {id}: {e}")
+            return "[@CartoonandAnime1Telugu] "
+
+    async def set_prefix(self, id, prefix):
+        try:
+            await self.col.update_one({"_id": int(id)}, {"$set": {"prefix": prefix}})
+        except Exception as e:
+            logging.error(f"Error setting prefix for user {id}: {e}")
+
+    async def get_suffix(self, id):
+        try:
+            user = await self.col.find_one({"_id": int(id)})
+            return user.get("suffix", "") if user else ""
+        except Exception as e:
+            logging.error(f"Error getting suffix for user {id}: {e}")
+            return ""
+
+    async def set_suffix(self, id, suffix):
+        try:
+            await self.col.update_one({"_id": int(id)}, {"$set": {"suffix": suffix}})
+        except Exception as e:
+            logging.error(f"Error setting suffix for user {id}: {e}")
+
+    async def get_telugu_only(self, id):
+        try:
+            user = await self.col.find_one({"_id": int(id)})
+            return user.get("telugu_only", False) if user else False
+        except Exception as e:
+            logging.error(f"Error getting telugu_only for user {id}: {e}")
+            return False
+
+    async def set_telugu_only(self, id, telugu_only):
+        try:
+            await self.col.update_one({"_id": int(id)}, {"$set": {"telugu_only": telugu_only}})
+        except Exception as e:
+            logging.error(f"Error setting telugu_only for user {id}: {e}")
+
 
 codeflixbots = Database(Config.DB_URL, Config.DB_NAME)

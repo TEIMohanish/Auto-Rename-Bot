@@ -30,6 +30,63 @@ async def auto_rename_command(client, message):
     )
 
 
+@Client.on_message(filters.private & filters.command("set_prefix"))
+async def set_prefix_command(client, message):
+    user_id = message.from_user.id
+    command_parts = message.text.split(maxsplit=1)
+    if len(command_parts) < 2:
+        return await message.reply_text("Please provide a prefix. Example: `/set_prefix [MyPrefix]`")
+
+    prefix = command_parts[1]
+    if not prefix.endswith(" "):
+        prefix += " "
+
+    await codeflixbots.set_prefix(user_id, prefix)
+    await message.reply_text(f"**Prefix saved:** `{prefix}`")
+
+
+@Client.on_message(filters.private & filters.command("del_prefix"))
+async def del_prefix_command(client, message):
+    user_id = message.from_user.id
+    await codeflixbots.set_prefix(user_id, "")
+    await message.reply_text("**Prefix removed successfully!**")
+
+
+@Client.on_message(filters.private & filters.command("set_suffix"))
+async def set_suffix_command(client, message):
+    user_id = message.from_user.id
+    command_parts = message.text.split(maxsplit=1)
+    if len(command_parts) < 2:
+        return await message.reply_text("Please provide a suffix. Example: `/set_suffix @MyChannel`")
+
+    suffix = command_parts[1]
+    if not suffix.startswith(" "):
+        suffix = " " + suffix
+
+    await codeflixbots.set_suffix(user_id, suffix)
+    await message.reply_text(f"**Suffix saved:** `{suffix}`")
+
+
+@Client.on_message(filters.private & filters.command("del_suffix"))
+async def del_suffix_command(client, message):
+    user_id = message.from_user.id
+    await codeflixbots.set_suffix(user_id, "")
+    await message.reply_text("**Suffix removed successfully!**")
+
+
+@Client.on_message(filters.private & filters.command("tel"))
+async def toggle_telugu_only(client, message):
+    user_id = message.from_user.id
+    current_status = await codeflixbots.get_telugu_only(user_id)
+    new_status = not current_status
+    await codeflixbots.set_telugu_only(user_id, new_status)
+
+    if new_status:
+        await message.reply_text("✅ **Telugu Audio Only mode enabled!**\nAll other audio tracks will be stripped during metadata processing.")
+    else:
+        await message.reply_text("❌ **Telugu Audio Only mode disabled!**\nAll audio tracks will be kept as original.")
+
+
 @Client.on_message(filters.private & filters.command("setmedia"))
 async def set_media_command(client, message):
     """Initiate media type selection with a sleek inline keyboard."""
