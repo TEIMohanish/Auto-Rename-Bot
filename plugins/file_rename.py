@@ -25,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 # Global dictionary to track ongoing operations
 renaming_operations = {}
+user_queues = {}
+queue_locks = {}
 
 # Enhanced regex patterns for season and episode extraction
 SEASON_EPISODE_PATTERNS = [
@@ -45,12 +47,13 @@ SEASON_EPISODE_PATTERNS = [
 
 # Quality detection patterns
 QUALITY_PATTERNS = [
-    (re.compile(r'\b(\d{3,4}[pi])\b', re.IGNORECASE), lambda m: m.group(1)),  # 1080p, 720p
+    (re.compile(r'\b(\d{3,4}[pi])\b', re.IGNORECASE), lambda m: m.group(1).lower()),  # 1080p, 720p
     (re.compile(r'\b(4k|2160p)\b', re.IGNORECASE), lambda m: "4k"),
     (re.compile(r'\b(2k|1440p)\b', re.IGNORECASE), lambda m: "2k"),
-    (re.compile(r'\b(HDRip|HDTV)\b', re.IGNORECASE), lambda m: m.group(1)),
-    (re.compile(r'\b(4kX264|4kx265)\b', re.IGNORECASE), lambda m: m.group(1)),
-    (re.compile(r'\[(\d{3,4}[pi])\]', re.IGNORECASE), lambda m: m.group(1))  # [1080p]
+    (re.compile(r'\[(\d{3,4}[pi])\]', re.IGNORECASE), lambda m: m.group(1).lower()),  # [1080p]
+    (re.compile(r'\b(1080|720|480|360)(?:p|i)?\b', re.IGNORECASE), lambda m: f"{m.group(1)}p"), # Catch missing 'p' like 1080
+    (re.compile(r'\b(HDRip|HDTV|BDRip|BRRip|WEB-DL|WEBRip|CAM|TS|DVDrip)\b', re.IGNORECASE), lambda m: m.group(1)),
+    (re.compile(r'\b(4kX264|4kx265)\b', re.IGNORECASE), lambda m: m.group(1))
 ]
 
 def extract_season_episode(filename):
@@ -59,7 +62,7 @@ def extract_season_episode(filename):
         match = pattern.search(filename)
         if match:
             season = match.group(1) if season_group else None
-            episode = match.group(2) if episode_group else match.group(1)
+            episode = match.group(2) if season_group and episode_group else match.group(1)
             logger.info(f"Extracted season: {season}, episode: {episode} from {filename}")
             return season, episode
     logger.warning(f"No season/episode pattern matched for {filename}")
@@ -74,6 +77,46 @@ def extract_quality(filename):
             logger.info(f"Extracted quality: {quality} from {filename}")
             return quality
     logger.warning(f"No quality pattern matched for {filename}")
+    return "Unknown"
+
+# Language detection patterns
+LANGUAGE_PATTERNS = [
+    re.compile(r'\b(hi|hin|hindi)\b', re.IGNORECASE),
+    re.compile(r'\b(en|eng|english)\b', re.IGNORECASE),
+    re.compile(r'\b(te|tel|telugu)\b', re.IGNORECASE),
+    re.compile(r'\b(ta|tam|tamil)\b', re.IGNORECASE),
+    re.compile(r'\b(ml|mal|malayalam)\b', re.IGNORECASE),
+    re.compile(r'\b(kn|kan|kannada)\b', re.IGNORECASE),
+    re.compile(r'\b(ja|jap|japanese)\b', re.IGNORECASE),
+    re.compile(r'\b(ko|kor|korean)\b', re.IGNORECASE),
+    re.compile(r'\b(es|spa|spanish)\b', re.IGNORECASE),
+    re.compile(r'\b(fr|fre|french)\b', re.IGNORECASE),
+    re.compile(r'\b(multi|dual[\s-]?audio)\b', re.IGNORECASE)
+]
+
+def extract_languages(filename):
+    """Extract languages from filename"""
+    languages = []
+    for pattern in LANGUAGE_PATTERNS:
+        match = pattern.search(filename)
+        if match:
+            lang = match.group(1).capitalize()
+            if lang.lower() in ['hi', 'hin']: lang = 'Hindi'
+            elif lang.lower() in ['en', 'eng']: lang = 'English'
+            elif lang.lower() in ['te', 'tel']: lang = 'Telugu'
+            elif lang.lower() in ['ta', 'tam']: lang = 'Tamil'
+            elif lang.lower() in ['ml', 'mal']: lang = 'Malayalam'
+            elif lang.lower() in ['kn', 'kan']: lang = 'Kannada'
+            elif lang.lower() in ['ja', 'jap']: lang = 'Japanese'
+            elif lang.lower() in ['ko', 'kor']: lang = 'Korean'
+            elif lang.lower() in ['dual audio', 'dual-audio']: lang = 'Dual Audio'
+
+            if lang not in languages:
+                languages.append(lang)
+
+    if languages:
+        logger.info(f"Extracted languages: {', '.join(languages)} from {filename}")
+        return ", ".join(languages)
     return "Unknown"
 
 async def cleanup_files(*paths):
@@ -140,9 +183,56 @@ async def add_metadata(input_path, output_path, user_id):
     if process.returncode != 0:
         raise RuntimeError(f"FFmpeg error: {stderr.decode()}")
 
+async def process_queue(client, user_id):
+    """Process files in the user's queue in sorted order based on episode"""
+    if user_id not in queue_locks:
+        queue_locks[user_id] = asyncio.Lock()
+
+    async with queue_locks[user_id]:
+        if not user_queues.get(user_id):
+            return
+
+        while user_queues.get(user_id):
+            # Sort queue by episode number if possible
+            def sort_key(item):
+                msg = item['message']
+                fname = ""
+                if msg.document: fname = msg.document.file_name
+                elif msg.video: fname = msg.video.file_name or ""
+                elif msg.audio: fname = msg.audio.file_name or ""
+
+                season, episode = extract_season_episode(fname)
+                if episode and episode.isdigit():
+                    return int(episode)
+                return 999999 # Put files without episode at the end
+
+            user_queues[user_id].sort(key=sort_key)
+
+            # Pop the first item
+            current_task = user_queues[user_id].pop(0)
+            await execute_rename(client, current_task['message'])
+
+
 @Client.on_message(filters.private & (filters.document | filters.video | filters.audio))
 async def auto_rename_files(client, message):
-    """Main handler for auto-renaming files"""
+    """Main handler for auto-renaming files - Adds to queue"""
+    user_id = message.from_user.id
+
+    if user_id not in user_queues:
+        user_queues[user_id] = []
+
+    user_queues[user_id].append({'message': message})
+
+    # Notify user that file is added to queue
+    await message.reply_text("⏳ File added to queue. Processing in order...", quote=True)
+
+    # Start queue processing if not already running (handled by lock)
+    if not (queue_locks.get(user_id) and queue_locks[user_id].locked()):
+        asyncio.create_task(process_queue(client, user_id))
+
+
+async def execute_rename(client, message):
+    """Execute the actual renaming process"""
     user_id = message.from_user.id
     format_template = await codeflixbots.get_format_template(user_id)
     
@@ -154,19 +244,28 @@ async def auto_rename_files(client, message):
         file_id = message.document.file_id
         file_name = message.document.file_name
         file_size = message.document.file_size
-        media_type = "document"
     elif message.video:
         file_id = message.video.file_id
         file_name = message.video.file_name or "video"
         file_size = message.video.file_size
-        media_type = "video"
     elif message.audio:
         file_id = message.audio.file_id
         file_name = message.audio.file_name or "audio"
         file_size = message.audio.file_size
-        media_type = "audio"
     else:
         return await message.reply_text("Unsupported file type")
+
+    # Get media preference
+    media_preference = await codeflixbots.get_media_preference(user_id)
+    if media_preference:
+        media_type = media_preference
+    else:
+        if message.document:
+            media_type = "document"
+        elif message.video:
+            media_type = "video"
+        elif message.audio:
+            media_type = "audio"
 
     # NSFW check
     if await check_anti_nsfw(file_name, message):
@@ -182,15 +281,18 @@ async def auto_rename_files(client, message):
         # Extract metadata from filename
         season, episode = extract_season_episode(file_name)
         quality = extract_quality(file_name)
+        languages = extract_languages(file_name)
         
         # Replace placeholders in template
         replacements = {
             '{season}': season or 'XX',
             '{episode}': episode or 'XX',
             '{quality}': quality,
+            '{languages}': languages,
             'Season': season or 'XX',
             'Episode': episode or 'XX',
-            'QUALITY': quality
+            'QUALITY': quality,
+            'LANGUAGES': languages
         }
         
         for placeholder, value in replacements.items():
@@ -229,14 +331,35 @@ async def auto_rename_files(client, message):
 
         # Prepare for upload
         await msg.edit("**Preparing upload...**")
-        caption = await codeflixbots.get_caption(message.chat.id) or f"**{new_filename}**"
+
+        # Format the custom default caption
+        default_caption = (
+            f"<b>{new_filename}</b>\n\n"
+            f"<b>🎥 Quality: {quality}</b>\n"
+            f"<b>🔊 Audio: {languages}</b>\n\n"
+            f"<b>🎦Main ¢нαииєℓs:-</b>\n"
+            f"<b>⭕️ Main:</b>\n"
+            f"<b> https://t.me/+uMOWx3CdNzYwN2E1</b>\n"
+            f"<b>⭕️ Network:</b>\n"
+            f"<b>https://t.me/CartoonAndAnime1Telugu</b>"
+        )
+
+        caption = await codeflixbots.get_caption(message.chat.id)
+        if caption:
+            # Re-apply replacements to the custom caption
+            for placeholder, value in replacements.items():
+                caption = caption.replace(placeholder, value)
+            caption = caption.replace('{filename}', new_filename).replace('{filename}', new_filename) # Double replace just in case
+        else:
+            caption = default_caption
+
         thumb = await codeflixbots.get_thumbnail(message.chat.id)
         thumb_path = None
 
         # Handle thumbnail
         if thumb:
             thumb_path = await client.download_media(thumb)
-        elif media_type == "video" and message.video.thumbs:
+        elif message.video and message.video.thumbs:
             thumb_path = await client.download_media(message.video.thumbs[0].file_id)
         
         thumb_path = await process_thumbnail(thumb_path)
