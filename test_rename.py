@@ -26,3 +26,11 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
 from plugins.file_rename import process_queue, user_queues
+
+def test_extract_quality_no_boundaries():
+    assert extract_quality("show_720p_video.mkv") == "720p"
+    assert extract_quality("show_1080_video.mkv") == "1080p"
+
+def test_extract_languages_no_boundaries():
+    assert extract_languages("show_telugu_audio.mkv") == "Telugu"
+    assert extract_languages("show_multi_audio_video.mkv") == "Multi"
