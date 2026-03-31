@@ -47,13 +47,13 @@ SEASON_EPISODE_PATTERNS = [
 
 # Quality detection patterns
 QUALITY_PATTERNS = [
-    (re.compile(r'\b(\d{3,4}[pi])\b', re.IGNORECASE), lambda m: m.group(1).lower()),  # 1080p, 720p
-    (re.compile(r'\b(4k|2160p)\b', re.IGNORECASE), lambda m: "4k"),
-    (re.compile(r'\b(2k|1440p)\b', re.IGNORECASE), lambda m: "2k"),
+    (re.compile(r'(?<!\d)(\d{3,4}[pi])(?!\d)', re.IGNORECASE), lambda m: m.group(1).lower()),  # 1080p, 720p
+    (re.compile(r'(?i)(4k|2160p)', re.IGNORECASE), lambda m: "4k"),
+    (re.compile(r'(?i)(2k|1440p)', re.IGNORECASE), lambda m: "2k"),
     (re.compile(r'\[(\d{3,4}[pi])\]', re.IGNORECASE), lambda m: m.group(1).lower()),  # [1080p]
-    (re.compile(r'\b(1080|720|480|360)(?:p|i)?\b', re.IGNORECASE), lambda m: f"{m.group(1)}p"), # Catch missing 'p' like 1080
-    (re.compile(r'\b(HDRip|HDTV|BDRip|BRRip|WEB-DL|WEBRip|CAM|TS|DVDrip)\b', re.IGNORECASE), lambda m: m.group(1)),
-    (re.compile(r'\b(4kX264|4kx265)\b', re.IGNORECASE), lambda m: m.group(1))
+    (re.compile(r'(?<!\d)(1080|720|480|360)(?:p|i)?(?!\d)', re.IGNORECASE), lambda m: f"{m.group(1)}p"), # Catch missing 'p' like 1080
+    (re.compile(r'(?i)(HDRip|HDTV|BDRip|BRRip|WEB-DL|WEBRip|CAM|TS|DVDrip)', re.IGNORECASE), lambda m: m.group(1)),
+    (re.compile(r'(?i)(4kX264|4kx265)', re.IGNORECASE), lambda m: m.group(1))
 ]
 
 def extract_season_episode(filename):
@@ -81,17 +81,17 @@ def extract_quality(filename):
 
 # Language detection patterns
 LANGUAGE_PATTERNS = [
-    re.compile(r'\b(hi|hin|hindi)\b', re.IGNORECASE),
-    re.compile(r'\b(en|eng|english)\b', re.IGNORECASE),
-    re.compile(r'\b(te|tel|telugu)\b', re.IGNORECASE),
-    re.compile(r'\b(ta|tam|tamil)\b', re.IGNORECASE),
-    re.compile(r'\b(ml|mal|malayalam)\b', re.IGNORECASE),
-    re.compile(r'\b(kn|kan|kannada)\b', re.IGNORECASE),
-    re.compile(r'\b(ja|jap|japanese)\b', re.IGNORECASE),
-    re.compile(r'\b(ko|kor|korean)\b', re.IGNORECASE),
-    re.compile(r'\b(es|spa|spanish)\b', re.IGNORECASE),
-    re.compile(r'\b(fr|fre|french)\b', re.IGNORECASE),
-    re.compile(r'\b(multi|dual[\s-]?audio)\b', re.IGNORECASE)
+    re.compile(r'(?i)(?<![a-z])(hi|hin|hindi)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(en|eng|english)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(te|tel|telugu)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(ta|tam|tamil)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(ml|mal|malayalam)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(kn|kan|kannada)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(ja|jap|japanese)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(ko|kor|korean)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(es|spa|spanish)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(fr|fre|french)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(multi|dual[\s_.-]?audio)', re.IGNORECASE)
 ]
 
 def extract_languages(filename):
@@ -192,12 +192,15 @@ async def process_queue(client, user_id):
         if not user_queues.get(user_id):
             return
 
+        # Wait a moment to allow a batch of forwarded files to all arrive
+        await asyncio.sleep(2)
+
         while user_queues.get(user_id):
             # Sort queue by episode number if possible
             def sort_key(item):
                 msg = item['message']
                 fname = ""
-                if msg.document: fname = msg.document.file_name
+                if msg.document: fname = msg.document.file_name or ""
                 elif msg.video: fname = msg.video.file_name or ""
                 elif msg.audio: fname = msg.audio.file_name or ""
 
