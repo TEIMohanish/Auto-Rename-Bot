@@ -87,6 +87,14 @@ LANGUAGE_PATTERNS = [
     re.compile(r'(?i)(?<![a-z])(ta|tam|tamil)(?![a-z])', re.IGNORECASE),
     re.compile(r'(?i)(?<![a-z])(ml|mal|malayalam)(?![a-z])', re.IGNORECASE),
     re.compile(r'(?i)(?<![a-z])(kn|kan|kannada)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(mr|mar|marathi)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(gu|guj|gujarati)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(bn|ben|bengali)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(pa|pan|punjabi)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(or|ori|odia)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(ur|urd|urdu)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(as|ass|assamese)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(bho|bhojpuri)(?![a-z])', re.IGNORECASE),
     re.compile(r'(?i)(?<![a-z])(ja|jap|japanese)(?![a-z])', re.IGNORECASE),
     re.compile(r'(?i)(?<![a-z])(ko|kor|korean)(?![a-z])', re.IGNORECASE),
     re.compile(r'(?i)(?<![a-z])(es|spa|spanish)(?![a-z])', re.IGNORECASE),
@@ -107,6 +115,14 @@ def extract_languages(filename):
             elif lang.lower() in ['ta', 'tam']: lang = 'Tamil'
             elif lang.lower() in ['ml', 'mal']: lang = 'Malayalam'
             elif lang.lower() in ['kn', 'kan']: lang = 'Kannada'
+            elif lang.lower() in ['mr', 'mar']: lang = 'Marathi'
+            elif lang.lower() in ['gu', 'guj']: lang = 'Gujarati'
+            elif lang.lower() in ['bn', 'ben']: lang = 'Bengali'
+            elif lang.lower() in ['pa', 'pan']: lang = 'Punjabi'
+            elif lang.lower() in ['or', 'ori']: lang = 'Odia'
+            elif lang.lower() in ['ur', 'urd']: lang = 'Urdu'
+            elif lang.lower() in ['as', 'ass']: lang = 'Assamese'
+            elif lang.lower() in ['bho']: lang = 'Bhojpuri'
             elif lang.lower() in ['ja', 'jap']: lang = 'Japanese'
             elif lang.lower() in ['ko', 'kor']: lang = 'Korean'
             elif lang.lower() in ['dual audio', 'dual-audio']: lang = 'Dual Audio'
@@ -158,17 +174,25 @@ async def add_metadata(input_path, output_path, user_id):
         'subtitle': await codeflixbots.get_subtitle(user_id)
     }
     
+    # To keep only Telugu audio and strip others, while mapping video and subtitles.
+    # -map 0:v (all video)
+    # -map 0:a:m:language:tel (only Telugu audio tracks)
+    # -map 0:a:m:language:te (only Telugu audio tracks)
+    # -map 0:s? (all subtitles if they exist)
     cmd = [
         ffmpeg,
         '-i', input_path,
+        '-map', '0:v',
+        '-map', '0:a:m:language:tel?',
+        '-map', '0:a:m:language:te?',
+        '-map', '0:s?',
+        '-c', 'copy',
         '-metadata', f'title={metadata["title"]}',
         '-metadata', f'artist={metadata["artist"]}',
         '-metadata', f'author={metadata["author"]}',
         '-metadata:s:v', f'title={metadata["video_title"]}',
         '-metadata:s:a', f'title={metadata["audio_title"]}',
         '-metadata:s:s', f'title={metadata["subtitle"]}',
-        '-map', '0',
-        '-c', 'copy',
         '-loglevel', 'error',
         output_path
     ]

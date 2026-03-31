@@ -34,3 +34,7 @@ def test_extract_quality_no_boundaries():
 def test_extract_languages_no_boundaries():
     assert extract_languages("show_telugu_audio.mkv") == "Telugu"
     assert extract_languages("show_multi_audio_video.mkv") == "Multi"
+
+def test_extract_languages_indian():
+    assert extract_languages("Movie_Marathi_DVDRip.mkv") == "Marathi"
+    assert extract_languages("Film Bengali audio.mp4") == "Bengali"
