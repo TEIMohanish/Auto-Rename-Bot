@@ -5,22 +5,22 @@ id_pattern = re.compile(r'^.\d+$')
 
 class Config(object):
     # pyro client config
-    API_ID    = os.environ.get("API_ID", "")
-    API_HASH  = os.environ.get("API_HASH", "")
-    BOT_TOKEN = os.environ.get("BOT_TOKEN", "736532225-w") 
+    API_ID    = os.environ.get("API_ID", "16546151")
+    API_HASH  = os.environ.get("API_HASH", "41f98a52cd38d06cb64d62472d8d91e5")
+    BOT_TOKEN = os.environ.get("BOT_TOKEN", "8397969700:AAH9Zz7jlQGH-7gCnEgmoPNtH6BAGHJmiGo") 
 
     # database config
-    DB_NAME = os.environ.get("DB_NAME","Yato")     
-    DB_URL  = os.environ.get("DB_URL","mongodb")
+    DB_NAME = os.environ.get("DB_NAME","ToonEncodes")     
+    DB_URL  = os.environ.get("DB_URL","mongodb+srv://ToonEncodes:TEI2011@toonencodes.qxvdzfk.mongodb.net/?retryWrites=true&w=majority")
     PORT = os.environ.get("PORT", "8080")
  
     # other configs
     BOT_UPTIME  = time.time()
     START_PIC   = os.environ.get("START_PIC", "https://graph.org/file/29a3acbbab9de5f45a5fe.jpg")
-    ADMIN       = [int(admin) if id_pattern.search(admin) else admin for admin in os.environ.get('ADMIN', '6497757690').split()]
+    ADMIN       = [int(admin) if id_pattern.search(admin) else admin for admin in os.environ.get('ADMIN', '2023056811').split()]
     FORCE_SUB_CHANNELS = os.environ.get('FORCE_SUB_CHANNELS', 'CartoonAndAnime1Telugu').split(',')
-    LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1001868871195"))
-    DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL", "-1001868871195"))
+    LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1001814795230"))
+    DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL", "-1001814795230"))
     
     # shortlink config
     SHORTLINK_URL = os.environ.get("SHORTLINK_URL", "arolinks.com")
