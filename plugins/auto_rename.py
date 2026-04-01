@@ -136,6 +136,12 @@ async def extend_command(client, message):
     await codeflixbots.update_usage(user_id, "extra_extracts", 5)
     await message.reply_text("🎁 **Bonus Claimed!**\nYou have been granted 5 extra audio extraction credits for today.")
 
+@Client.on_message(filters.private & filters.command("multi"))
+async def set_multi_command(client, message):
+    user_id = message.from_user.id
+    await codeflixbots.set_extract_language(user_id, "off")
+    await message.reply_text("❌ **Audio Extraction Disabled** ❌\nAll original audio tracks will be kept.")
+
 @Client.on_message(filters.private & filters.command("setmedia"))
 async def set_media_command(client, message):
     """Initiate media type selection with a sleek inline keyboard."""

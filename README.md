@@ -74,7 +74,9 @@ autorename - To auto rename your files.
 metadata - to set metadata
 setmedia - To set your media type preference.
 token - Generate a token to use the bot.
-tel - Toggle strict Telugu audio mode.
+extract - Select a specific audio language to extract.
+multi - Turn off audio extraction (keep all audio tracks).
+extend - Get 5 free extra audio extraction credits.
 set_prefix - Set a custom prefix for filename.
 del_prefix - Delete prefix.
 set_suffix - Set a custom suffix for filename.
