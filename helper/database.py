@@ -245,6 +245,21 @@ class Database:
         except Exception as e:
             logging.error(f"Error setting token expiry for user {id}: {e}")
 
+    async def set_user_plan(self, id, plan_name):
+        try:
+            await self.col.update_one(
+                {"_id": int(id)},
+                {"$set": {
+                    "plan": plan_name,
+                    "used_renames": 0,
+                    "used_extracts": 0,
+                    "extra_extracts": 0,
+                    "usage_date": datetime.date.today().isoformat()
+                }}
+            )
+        except Exception as e:
+            logging.error(f"Error setting plan for user {id}: {e}")
+
     async def get_plan_details(self, id):
         try:
             user = await self.col.find_one({"_id": int(id)})
