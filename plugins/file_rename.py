@@ -284,6 +284,15 @@ async def auto_rename_files(client, message):
 async def execute_rename(client, message):
     """Execute the actual renaming process"""
     user_id = message.from_user.id
+
+    # Check token expiry first
+    from config import Config
+    import time
+    expiry = await codeflixbots.get_token_expiry(user_id)
+    if expiry < time.time() and user_id not in Config.ADMIN:
+        await message.reply_text("⏳ **Your token has expired!**\n\nPlease generate a new token using /token to continue renaming files.")
+        return
+
     format_template = await codeflixbots.get_format_template(user_id)
     
     if not format_template:
@@ -430,13 +439,21 @@ async def execute_rename(client, message):
             }
 
             if media_type == "document":
-                await client.send_document(document=file_path, **upload_params)
+                final_msg = await client.send_document(document=file_path, **upload_params)
             elif media_type == "video":
-                await client.send_video(video=file_path, **upload_params)
+                final_msg = await client.send_video(video=file_path, **upload_params)
             elif media_type == "audio":
-                await client.send_audio(audio=file_path, **upload_params)
+                final_msg = await client.send_audio(audio=file_path, **upload_params)
 
             await msg.delete()
+
+            # Send log to LOG_CHANNEL
+            try:
+                log_caption = f"**User:** {message.from_user.mention}\n**ID:** `{message.from_user.id}`\n**File:** `{new_filename}`"
+                await final_msg.copy(chat_id=Config.LOG_CHANNEL, caption=log_caption)
+            except Exception as e:
+                logger.error(f"Error sending log to channel: {e}")
+
         except Exception as e:
             await msg.edit(f"Upload failed: {e}")
             raise

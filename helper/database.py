@@ -23,8 +23,9 @@ class Database:
             file_id=None,
             caption=None,
             metadata=True,
-            metadata_code="Telegram : @Codeflix_Bots",
+            metadata_code="Telegram : @CartoonAndAnime1Telugu",
             format_template=None,
+            token_expiry=0,
             ban_status=dict(
                 is_banned=False,
                 ban_duration=0,
@@ -223,6 +224,20 @@ class Database:
             await self.col.update_one({"_id": int(id)}, {"$set": {"telugu_only": telugu_only}})
         except Exception as e:
             logging.error(f"Error setting telugu_only for user {id}: {e}")
+
+    async def get_token_expiry(self, id):
+        try:
+            user = await self.col.find_one({"_id": int(id)})
+            return user.get("token_expiry", 0) if user else 0
+        except Exception as e:
+            logging.error(f"Error getting token expiry for user {id}: {e}")
+            return 0
+
+    async def set_token_expiry(self, id, expiry_time):
+        try:
+            await self.col.update_one({"_id": int(id)}, {"$set": {"token_expiry": expiry_time}})
+        except Exception as e:
+            logging.error(f"Error setting token expiry for user {id}: {e}")
 
 
 codeflixbots = Database(Config.DB_URL, Config.DB_NAME)
