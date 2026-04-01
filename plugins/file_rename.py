@@ -174,20 +174,35 @@ async def add_metadata(input_path, output_path, user_id):
         'subtitle': await codeflixbots.get_subtitle(user_id)
     }
     
-    is_telugu_only = await codeflixbots.get_telugu_only(user_id)
+    extract_lang = await codeflixbots.get_extract_language(user_id)
 
-    if is_telugu_only:
-        # To keep only Telugu audio and strip others, while mapping video and subtitles.
-        # -map 0:v (all video)
-        # -map 0:a:m:language:tel (only Telugu audio tracks)
-        # -map 0:a:m:language:te (only Telugu audio tracks)
-        # -map 0:s? (all subtitles if they exist)
+    if extract_lang and extract_lang != "off":
+        # Dynamic language mapping mapping (e.g. -map 0:a:m:language:hin?)
+        lang_maps = []
+        if extract_lang == "tel":
+            lang_maps = ['-map', '0:a:m:language:tel?', '-map', '0:a:m:language:te?']
+        elif extract_lang == "hin":
+            lang_maps = ['-map', '0:a:m:language:hin?', '-map', '0:a:m:language:hi?']
+        elif extract_lang == "eng":
+            lang_maps = ['-map', '0:a:m:language:eng?', '-map', '0:a:m:language:en?']
+        elif extract_lang == "tam":
+            lang_maps = ['-map', '0:a:m:language:tam?', '-map', '0:a:m:language:ta?']
+        elif extract_lang == "mal":
+            lang_maps = ['-map', '0:a:m:language:mal?', '-map', '0:a:m:language:ml?']
+        elif extract_lang == "kan":
+            lang_maps = ['-map', '0:a:m:language:kan?', '-map', '0:a:m:language:kn?']
+        elif extract_lang == "mar":
+            lang_maps = ['-map', '0:a:m:language:mar?', '-map', '0:a:m:language:mr?']
+        elif extract_lang == "ben":
+            lang_maps = ['-map', '0:a:m:language:ben?', '-map', '0:a:m:language:bn?']
+        else:
+            lang_maps = ['-map', f'0:a:m:language:{extract_lang}?']
+
         cmd = [
             ffmpeg,
             '-i', input_path,
-            '-map', '0:v',
-            '-map', '0:a:m:language:tel?',
-            '-map', '0:a:m:language:te?',
+            '-map', '0:v'
+        ] + lang_maps + [
             '-map', '0:s?',
             '-c', 'copy',
             '-metadata', f'title={metadata["title"]}',
@@ -297,6 +312,41 @@ async def execute_rename(client, message):
     
     if not format_template:
         return await message.reply_text("Please set a rename format using /autorename")
+
+    # Check limits based on plan
+    plan_details = await codeflixbots.get_plan_details(user_id)
+    if not plan_details:
+        return await message.reply_text("Failed to fetch plan details.")
+
+    user_plan = plan_details.get("plan", "Free").lower()
+    used_renames = plan_details.get("used_renames", 0)
+    used_extracts = plan_details.get("used_extracts", 0)
+    extra_extracts = plan_details.get("extra_extracts", 0)
+    extract_lang = await codeflixbots.get_extract_language(user_id)
+    is_extracting = extract_lang and extract_lang != "off"
+
+    # Define limits
+    limits = {
+        "free": {"rename": 20, "extract": 0},
+        "bronze": {"rename": 40, "extract": 20},
+        "silver": {"rename": 60, "extract": 30},
+        "gold": {"rename": 100, "extract": 50},
+        "platinum": {"rename": float('inf'), "extract": 100},
+        "diamond": {"rename": float('inf'), "extract": float('inf')}
+    }
+
+    user_limits = limits.get(user_plan, limits["free"])
+
+    if user_id not in Config.ADMIN:
+        if used_renames >= user_limits["rename"]:
+            return await message.reply_text(f"⚠️ **Rename Limit Reached!**\nYou have exhausted your {user_plan} plan's daily rename limit ({user_limits['rename']} files).\nWait 24 hours or upgrade your plan.")
+
+        if is_extracting:
+            total_allowed_extracts = user_limits["extract"] + extra_extracts
+            if used_extracts >= total_allowed_extracts:
+                if user_plan == "free" and extra_extracts == 0:
+                    return await message.reply_text(f"⚠️ **Extraction Limit Reached!**\nFree users don't have audio extraction limits. You can claim 5 free extracts using `/extend`.")
+                return await message.reply_text(f"⚠️ **Extraction Limit Reached!**\nYou have exhausted your {user_plan} plan's daily extract limit.\nWait 24 hours or upgrade your plan.")
 
     # Get file information
     if message.document:
@@ -453,6 +503,11 @@ async def execute_rename(client, message):
                 await final_msg.copy(chat_id=Config.LOG_CHANNEL, caption=log_caption)
             except Exception as e:
                 logger.error(f"Error sending log to channel: {e}")
+
+            # Update usage stats
+            await codeflixbots.update_usage(user_id, "used_renames", 1)
+            if is_extracting:
+                await codeflixbots.update_usage(user_id, "used_extracts", 1)
 
         except Exception as e:
             await msg.edit(f"Upload failed: {e}")

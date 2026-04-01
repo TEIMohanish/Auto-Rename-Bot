@@ -103,12 +103,14 @@ class Txt(object):
 ᴏɴ - @TEMohanish"""
 
     PREMIUM_TXT = """<b>ᴜᴘɢʀᴀᴅᴇ ᴛᴏ ᴏᴜʀ ᴘʀᴇᴍɪᴜᴍ sᴇʀᴠɪᴄᴇ ᴀɴᴅ ᴇɴJᴏʏ ᴇxᴄʟᴜsɪᴠᴇ ғᴇᴀᴛᴜʀᴇs:
-○ ᴜɴʟɪᴍɪᴛᴇᴅ Rᴇɴᴀᴍɪɴɢ: ʀᴇɴᴀᴍᴇ ᴀs ᴍᴀɴʏ ғɪʟᴇs ᴀs ʏᴏᴜ ᴡᴀɴᴛ ᴡɪᴛʜᴏᴜᴛ ᴀɴʏ ʀᴇsᴛʀɪᴄᴛɪᴏɴs ᴏʀ ᴛᴏᴋᴇɴꜱ.
+○ ɪɴᴄʀᴇᴀꜱᴇᴅ ʟɪᴍɪᴛꜱ: ʀᴇɴᴀᴍᴇ ᴀɴᴅ ᴇxᴛʀᴀᴄᴛ ᴀᴜᴅɪᴏ ᴛʀᴀᴄᴋꜱ ᴡɪᴛʜ ʜɪɢʜᴇʀ ᴅᴀɪʟʏ ᴀʟʟᴏᴡᴀɴᴄᴇꜱ.
 ○ ᴇᴀʀʟʏ Aᴄᴄᴇss: ʙᴇ ᴛʜᴇ ғɪʀsᴛ ᴛᴏ ᴛᴇsᴛ ᴀɴᴅ ᴜsᴇ ᴏᴜʀ ʟᴀᴛᴇsᴛ ғᴇᴀᴛᴜʀᴇs ʙᴇғᴏʀᴇ ᴀɴʏᴏɴᴇ ᴇʟsᴇ.
 
 • ᴜꜱᴇ /plan ᴛᴏ ꜱᴇᴇ ᴀʟʟ ᴏᴜʀ ᴘʟᴀɴꜱ ᴀᴛ ᴏɴᴄᴇ.
 
-➲ ғɪʀsᴛ sᴛᴇᴘ : ᴘᴀʏ ᴛʜᴇ ᴀᴍᴏᴜɴᴛ ᴀᴄᴄᴏʀᴅɪɴɢ ᴛᴏ ʏᴏᴜʀ ғᴀᴠᴏʀɪᴛᴇ ᴘʟᴀɴ ᴛᴏ ᴛʜɪs 9381107691@fam ᴜᴘɪ ɪᴅ.
+➲ ᴘᴀʏ ᴛʜᴇ ᴀᴍᴏᴜɴᴛ ᴀᴄᴄᴏʀᴅɪɴɢ ᴛᴏ ʏᴏᴜʀ ғᴀᴠᴏʀɪᴛᴇ ᴘʟᴀɴ ᴛᴏ ᴛʜᴇ ᴀᴅᴅʀᴇꜱꜱᴇꜱ ʙᴇʟᴏᴡ:
+💸 UPI ANY APP :- <code>9381107691@fam</code>
+🪙 Binance TRON :- <code>TGguXq7e4ju9TXnBUhqwbXb4sbupPyumMo</code>
 
 ➲ secoɴᴅ sᴛᴇᴘ : ᴛᴀᴋᴇ ᴀ sᴄʀᴇᴇɴsʜᴏᴛ ᴏғ ʏᴏᴜʀ ᴘᴀʏᴍᴇɴᴛ ᴀɴᴅ sʜᴀʀᴇ ɪᴛ ᴅɪʀᴇᴄᴛʟʏ ʜᴇʀᴇ: @TEMohanish
 
@@ -118,14 +120,32 @@ Yᴏᴜʀ ᴘʀᴇᴍɪᴜᴍ ᴘʟᴀɴ ᴡɪʟʟ ʙᴇ ᴀᴄᴛɪᴠᴀᴛᴇ
 
     PREPLANS_TXT = """<b>👋 bro,
     
-🎖️ <u>ᴀᴠᴀɪʟᴀʙʟᴇ ᴘʟᴀɴs</u> :
+🎖️ <u>ᴀᴠᴀɪʟᴀʙʟᴇ ᴘʟᴀɴs (Valid for 30 Days)</u>:
 
-Pʀɪᴄɪɴɢ:
-➜ ᴍᴏɴᴛʜʟʏ ᴘʀᴇᴍɪᴜᴍ: ₹50/ᴍᴏɴᴛʜ
-➜ ᴅᴀɪʟʏ ᴘʀᴇᴍɪᴜᴍ: ₹𝟻/ᴅᴀʏ
-➜  ғᴏʀ ʙᴏᴛ ʜᴏsᴛɪɴɢ: ᴄᴏɴᴛᴀᴄᴛ @TEMohanish
+🥉 Bronze
+➜ 40 files/day rename + 20 files/day extract
+➜ Price: 50/- (0.7$)
 
-➲ ᴜᴘɪ ɪᴅ - <code>9381107691@fam</code>
+🥈 Silver
+➜ 60 files/day rename + 30 files/day extract
+➜ Price: 70/- (1$)
+
+🥇 Gold
+➜ 100 files/day rename + 50 files/day extract
+➜ Price: 100/- (1.3$)
+
+💠 Platinum
+➜ Unlimited files/day rename + 100 files/day extract
+➜ Price: 130/- (1.5$)
+
+💎 Diamond
+➜ Unlimited files/day rename + Unlimited files/day extract
+➜ Price: 150/- (1.7$)
+
+⚠️ All are for 30 days. No compensation will be provided if bot is not working.
+
+💸 UPI ANY APP :- <code>9381107691@fam</code>
+🪙 Binance TRON :- <code>TGguXq7e4ju9TXnBUhqwbXb4sbupPyumMo</code>
 
 ‼️ᴜᴘʟᴏᴀᴅ ᴛʜᴇ ᴘᴀʏᴍᴇɴᴛ sᴄʀᴇᴇɴsʜᴏᴛ ʜᴇʀᴇ ᴀɴᴅ ʀᴇᴘʟʏ ᴡɪᴛʜ ᴛʜᴇ /bought ᴄᴏᴍᴍᴀɴᴅ.</b>"""
     
@@ -137,7 +157,8 @@ Pʀɪᴄɪɴɢ:
 
 ➲ /Autorename: ᴀᴜᴛᴏ ʀᴇɴᴀᴍᴇ ʏᴏᴜʀ ꜰɪʟᴇꜱ.
 ➲ /Metadata: ᴄᴏᴍᴍᴀɴᴅꜱ ᴛᴏ ᴛᴜʀɴ ᴏɴ ᴏғғ ᴍᴇᴛᴀᴅᴀᴛᴀ.
-➲ /tel: ᴛᴏɢɢʟᴇ ᴛᴇʟᴜɢᴜ ᴀᴜᴅɪᴏ ᴏɴʟʏ ᴍᴏᴅᴇ.
+➲ /extract: ꜱᴇʟᴇᴄᴛ ᴀ ꜱᴘᴇᴄɪꜰɪᴄ ᴀᴜᴅɪᴏ ʟᴀɴɢᴜᴀɢᴇ ᴛᴏ ᴇxᴛʀᴀᴄᴛ (ʀᴇᴍᴏᴠᴇꜱ ᴏᴛʜᴇʀꜱ).
+➲ /extend: ɢᴇᴛ 5 ꜰʀᴇᴇ ᴇxᴛʀᴀᴄᴛ ᴄʀᴇᴅɪᴛꜱ (ꜰʀᴇᴇ ᴜꜱᴇʀꜱ ᴏɴʟʏ).
 ➲ /Help: ɢᴇᴛ ǫᴜɪᴄᴋ ᴀꜱꜱɪꜱᴛᴀɴᴄᴇ.</b>"""
 
     SEND_METADATA = """
