@@ -87,6 +87,14 @@ LANGUAGE_PATTERNS = [
     re.compile(r'(?i)(?<![a-z])(ta|tam|tamil)(?![a-z])', re.IGNORECASE),
     re.compile(r'(?i)(?<![a-z])(ml|mal|malayalam)(?![a-z])', re.IGNORECASE),
     re.compile(r'(?i)(?<![a-z])(kn|kan|kannada)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(mr|mar|marathi)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(gu|guj|gujarati)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(bn|ben|bengali)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(pa|pan|punjabi)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(or|ori|odia)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(ur|urd|urdu)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(as|ass|assamese)(?![a-z])', re.IGNORECASE),
+    re.compile(r'(?i)(?<![a-z])(bho|bhojpuri)(?![a-z])', re.IGNORECASE),
     re.compile(r'(?i)(?<![a-z])(ja|jap|japanese)(?![a-z])', re.IGNORECASE),
     re.compile(r'(?i)(?<![a-z])(ko|kor|korean)(?![a-z])', re.IGNORECASE),
     re.compile(r'(?i)(?<![a-z])(es|spa|spanish)(?![a-z])', re.IGNORECASE),
@@ -107,6 +115,14 @@ def extract_languages(filename):
             elif lang.lower() in ['ta', 'tam']: lang = 'Tamil'
             elif lang.lower() in ['ml', 'mal']: lang = 'Malayalam'
             elif lang.lower() in ['kn', 'kan']: lang = 'Kannada'
+            elif lang.lower() in ['mr', 'mar']: lang = 'Marathi'
+            elif lang.lower() in ['gu', 'guj']: lang = 'Gujarati'
+            elif lang.lower() in ['bn', 'ben']: lang = 'Bengali'
+            elif lang.lower() in ['pa', 'pan']: lang = 'Punjabi'
+            elif lang.lower() in ['or', 'ori']: lang = 'Odia'
+            elif lang.lower() in ['ur', 'urd']: lang = 'Urdu'
+            elif lang.lower() in ['as', 'ass']: lang = 'Assamese'
+            elif lang.lower() in ['bho']: lang = 'Bhojpuri'
             elif lang.lower() in ['ja', 'jap']: lang = 'Japanese'
             elif lang.lower() in ['ko', 'kor']: lang = 'Korean'
             elif lang.lower() in ['dual audio', 'dual-audio']: lang = 'Dual Audio'
@@ -158,20 +174,62 @@ async def add_metadata(input_path, output_path, user_id):
         'subtitle': await codeflixbots.get_subtitle(user_id)
     }
     
-    cmd = [
-        ffmpeg,
-        '-i', input_path,
-        '-metadata', f'title={metadata["title"]}',
-        '-metadata', f'artist={metadata["artist"]}',
-        '-metadata', f'author={metadata["author"]}',
-        '-metadata:s:v', f'title={metadata["video_title"]}',
-        '-metadata:s:a', f'title={metadata["audio_title"]}',
-        '-metadata:s:s', f'title={metadata["subtitle"]}',
-        '-map', '0',
-        '-c', 'copy',
-        '-loglevel', 'error',
-        output_path
-    ]
+    extract_lang = await codeflixbots.get_extract_language(user_id)
+
+    if extract_lang and extract_lang != "off":
+        # Dynamic language mapping mapping (e.g. -map 0:a:m:language:hin?)
+        lang_maps = []
+        if extract_lang == "tel":
+            lang_maps = ['-map', '0:a:m:language:tel?', '-map', '0:a:m:language:te?']
+        elif extract_lang == "hin":
+            lang_maps = ['-map', '0:a:m:language:hin?', '-map', '0:a:m:language:hi?']
+        elif extract_lang == "eng":
+            lang_maps = ['-map', '0:a:m:language:eng?', '-map', '0:a:m:language:en?']
+        elif extract_lang == "tam":
+            lang_maps = ['-map', '0:a:m:language:tam?', '-map', '0:a:m:language:ta?']
+        elif extract_lang == "mal":
+            lang_maps = ['-map', '0:a:m:language:mal?', '-map', '0:a:m:language:ml?']
+        elif extract_lang == "kan":
+            lang_maps = ['-map', '0:a:m:language:kan?', '-map', '0:a:m:language:kn?']
+        elif extract_lang == "mar":
+            lang_maps = ['-map', '0:a:m:language:mar?', '-map', '0:a:m:language:mr?']
+        elif extract_lang == "ben":
+            lang_maps = ['-map', '0:a:m:language:ben?', '-map', '0:a:m:language:bn?']
+        else:
+            lang_maps = ['-map', f'0:a:m:language:{extract_lang}?']
+
+        cmd = [
+            ffmpeg,
+            '-i', input_path,
+            '-map', '0:v'
+        ] + lang_maps + [
+            '-map', '0:s?',
+            '-c', 'copy',
+            '-metadata', f'title={metadata["title"]}',
+            '-metadata', f'artist={metadata["artist"]}',
+            '-metadata', f'author={metadata["author"]}',
+            '-metadata:s:v', f'title={metadata["video_title"]}',
+            '-metadata:s:a', f'title={metadata["audio_title"]}',
+            '-metadata:s:s', f'title={metadata["subtitle"]}',
+            '-loglevel', 'error',
+            output_path
+        ]
+    else:
+        # Default behavior: copy everything
+        cmd = [
+            ffmpeg,
+            '-i', input_path,
+            '-map', '0',
+            '-c', 'copy',
+            '-metadata', f'title={metadata["title"]}',
+            '-metadata', f'artist={metadata["artist"]}',
+            '-metadata', f'author={metadata["author"]}',
+            '-metadata:s:v', f'title={metadata["video_title"]}',
+            '-metadata:s:a', f'title={metadata["audio_title"]}',
+            '-metadata:s:s', f'title={metadata["subtitle"]}',
+            '-loglevel', 'error',
+            output_path
+        ]
     
     process = await asyncio.create_subprocess_exec(
         *cmd,
@@ -213,7 +271,11 @@ async def process_queue(client, user_id):
 
             # Pop the first item
             current_task = user_queues[user_id].pop(0)
-            await execute_rename(client, current_task['message'])
+            try:
+                await execute_rename(client, current_task['message'])
+            except Exception as e:
+                logger.error(f"Error processing file in queue: {e}")
+                await current_task['message'].reply_text(f"Error processing this file: {e}")
 
 
 @Client.on_message(filters.private & (filters.document | filters.video | filters.audio))
@@ -237,10 +299,54 @@ async def auto_rename_files(client, message):
 async def execute_rename(client, message):
     """Execute the actual renaming process"""
     user_id = message.from_user.id
+
+    # Check token expiry first
+    from config import Config
+    import time
+    expiry = await codeflixbots.get_token_expiry(user_id)
+    if expiry < time.time() and user_id not in Config.ADMIN:
+        await message.reply_text("⏳ **Your token has expired!**\n\nPlease generate a new token using /token to continue renaming files.")
+        return
+
     format_template = await codeflixbots.get_format_template(user_id)
     
     if not format_template:
         return await message.reply_text("Please set a rename format using /autorename")
+
+    # Check limits based on plan
+    plan_details = await codeflixbots.get_plan_details(user_id)
+    if not plan_details:
+        return await message.reply_text("Failed to fetch plan details.")
+
+    user_plan = plan_details.get("plan", "Free").lower()
+    used_renames = plan_details.get("used_renames", 0)
+    used_extracts = plan_details.get("used_extracts", 0)
+    extra_extracts = plan_details.get("extra_extracts", 0)
+    extract_lang = await codeflixbots.get_extract_language(user_id)
+    is_extracting = extract_lang and extract_lang != "off"
+
+    # Define limits
+    limits = {
+        "free": {"rename": 20, "extract": 0},
+        "bronze": {"rename": 40, "extract": 20},
+        "silver": {"rename": 60, "extract": 30},
+        "gold": {"rename": 100, "extract": 50},
+        "platinum": {"rename": float('inf'), "extract": 100},
+        "diamond": {"rename": float('inf'), "extract": float('inf')}
+    }
+
+    user_limits = limits.get(user_plan, limits["free"])
+
+    if user_id not in Config.ADMIN:
+        if used_renames >= user_limits["rename"]:
+            return await message.reply_text(f"⚠️ **Rename Limit Reached!**\nYou have exhausted your {user_plan} plan's daily rename limit ({user_limits['rename']} files).\nWait 24 hours or upgrade your plan.")
+
+        if is_extracting:
+            total_allowed_extracts = user_limits["extract"] + extra_extracts
+            if used_extracts >= total_allowed_extracts:
+                if user_plan == "free" and extra_extracts == 0:
+                    return await message.reply_text(f"⚠️ **Extraction Limit Reached!**\nFree users don't have audio extraction limits. You can claim 5 free extracts using `/extend`.")
+                return await message.reply_text(f"⚠️ **Extraction Limit Reached!**\nYou have exhausted your {user_plan} plan's daily extract limit.\nWait 24 hours or upgrade your plan.")
 
     # Get file information
     if message.document:
@@ -301,9 +407,13 @@ async def execute_rename(client, message):
         for placeholder, value in replacements.items():
             format_template = format_template.replace(placeholder, value)
 
+        # Get and apply prefix and suffix
+        prefix = await codeflixbots.get_prefix(user_id)
+        suffix = await codeflixbots.get_suffix(user_id)
+
         # Prepare file paths
         ext = os.path.splitext(file_name)[1] or ('.mp4' if media_type == 'video' else '.mp3')
-        new_filename = f"{format_template}{ext}"
+        new_filename = f"{prefix}{format_template}{suffix}{ext}"
         download_path = f"downloads/{new_filename}"
         metadata_path = f"metadata/{new_filename}"
         
@@ -379,13 +489,26 @@ async def execute_rename(client, message):
             }
 
             if media_type == "document":
-                await client.send_document(document=file_path, **upload_params)
+                final_msg = await client.send_document(document=file_path, **upload_params)
             elif media_type == "video":
-                await client.send_video(video=file_path, **upload_params)
+                final_msg = await client.send_video(video=file_path, **upload_params)
             elif media_type == "audio":
-                await client.send_audio(audio=file_path, **upload_params)
+                final_msg = await client.send_audio(audio=file_path, **upload_params)
 
             await msg.delete()
+
+            # Send log to LOG_CHANNEL
+            try:
+                log_caption = f"**User:** {message.from_user.mention}\n**ID:** `{message.from_user.id}`\n**File:** `{new_filename}`"
+                await final_msg.copy(chat_id=Config.LOG_CHANNEL, caption=log_caption)
+            except Exception as e:
+                logger.error(f"Error sending log to channel: {e}")
+
+            # Update usage stats
+            await codeflixbots.update_usage(user_id, "used_renames", 1)
+            if is_extracting:
+                await codeflixbots.update_usage(user_id, "used_extracts", 1)
+
         except Exception as e:
             await msg.edit(f"Upload failed: {e}")
             raise
