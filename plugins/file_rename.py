@@ -162,8 +162,9 @@ async def process_thumbnail(thumb_path):
 async def add_metadata(input_path, output_path, user_id):
     """Add metadata to media file using ffmpeg"""
     ffmpeg = shutil.which('ffmpeg')
-    if not ffmpeg:
-        raise RuntimeError("FFmpeg not found in PATH")
+    ffprobe = shutil.which('ffprobe')
+    if not ffmpeg or not ffprobe:
+        raise RuntimeError("FFmpeg/FFprobe not found in PATH")
     
     metadata = {
         'title': await codeflixbots.get_title(user_id),
@@ -176,32 +177,54 @@ async def add_metadata(input_path, output_path, user_id):
     
     extract_lang = await codeflixbots.get_extract_language(user_id)
 
-    if extract_lang and extract_lang != "off":
-        # Dynamic language mapping mapping (e.g. -map 0:a:m:language:hin?)
-        lang_maps = []
-        if extract_lang == "tel":
-            lang_maps = ['-map', '0:a:m:language:tel?', '-map', '0:a:m:language:te?']
-        elif extract_lang == "hin":
-            lang_maps = ['-map', '0:a:m:language:hin?', '-map', '0:a:m:language:hi?']
-        elif extract_lang == "eng":
-            lang_maps = ['-map', '0:a:m:language:eng?', '-map', '0:a:m:language:en?']
-        elif extract_lang == "tam":
-            lang_maps = ['-map', '0:a:m:language:tam?', '-map', '0:a:m:language:ta?']
-        elif extract_lang == "mal":
-            lang_maps = ['-map', '0:a:m:language:mal?', '-map', '0:a:m:language:ml?']
-        elif extract_lang == "kan":
-            lang_maps = ['-map', '0:a:m:language:kan?', '-map', '0:a:m:language:kn?']
-        elif extract_lang == "mar":
-            lang_maps = ['-map', '0:a:m:language:mar?', '-map', '0:a:m:language:mr?']
-        elif extract_lang == "ben":
-            lang_maps = ['-map', '0:a:m:language:ben?', '-map', '0:a:m:language:bn?']
-        else:
-            lang_maps = ['-map', f'0:a:m:language:{extract_lang}?']
+    # Dictionary of lang codes to search for
+    lang_codes_map = {
+        "tel": ["tel", "te"],
+        "hin": ["hin", "hi"],
+        "eng": ["eng", "en"],
+        "tam": ["tam", "ta"],
+        "mal": ["mal", "ml"],
+        "kan": ["kan", "kn"],
+        "mar": ["mar", "mr"],
+        "ben": ["ben", "bn"]
+    }
 
+    lang_maps = []
+
+    if extract_lang and extract_lang != "off":
+        # Probe file to see if the requested audio language exists
+        probe_cmd = [
+            ffprobe, '-v', 'error', '-select_streams', 'a',
+            '-show_entries', 'stream=index:stream_tags=language',
+            '-of', 'csv=p=0', input_path
+        ]
+
+        probe_process = await asyncio.create_subprocess_exec(
+            *probe_cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, _ = await probe_process.communicate()
+
+        output = stdout.decode().strip()
+        target_codes = lang_codes_map.get(extract_lang, [extract_lang])
+
+        # Output format is something like "1,tel\n2,hin"
+        for line in output.split('\n'):
+            if not line: continue
+            parts = line.split(',')
+            if len(parts) >= 2:
+                stream_index, stream_lang = parts[0], parts[1].lower()
+                if stream_lang in target_codes:
+                    lang_maps.extend(['-map', f'0:{stream_index}'])
+
+    # If user wants extraction but stream is NOT found, fallback to copying all streams
+    # to avoid FFmpeg crashing with "Stream map matches no streams" or creating a silent file.
+    if extract_lang and extract_lang != "off" and lang_maps:
         cmd = [
             ffmpeg,
             '-i', input_path,
-            '-map', '0:v'
+            '-map', '0:v?'
         ] + lang_maps + [
             '-map', '0:s?',
             '-c', 'copy',
@@ -385,6 +408,10 @@ async def execute_rename(client, message):
         if (datetime.now() - renaming_operations[file_id]).seconds < 10:
             return
     renaming_operations[file_id] = datetime.now()
+
+    download_path = None
+    metadata_path = None
+    thumb_path = None
 
     try:
         # Extract metadata from filename
